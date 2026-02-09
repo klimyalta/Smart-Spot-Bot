@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Smart Spot Bot — Интерфейс</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b1220; --card:#0e1726; --border:#1f2a44;
+      --text:#e6eef8; --muted:#9aa4b2; --accent:#4f46e5; --accent2:#22d3ee;
+      --good:#10b981; --bad:#ef4444; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:radial-gradient(1200px 600px at 10% -10%, rgba(79,70,229,0.12), transparent),
+                radial-gradient(1200px 600px at 90% 110%, rgba(34,211,238,0.10), transparent),
+                linear-gradient(180deg,#0a1020 0%, #0b1220 100%);
+      color:var(--text); font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    }
+    .container{ max-width:1150px; margin:28px auto; padding:0 16px; }
+    .header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .brand{ font-weight:800; letter-spacing:0.2px; }
+    .badge{ font-size:12px; color:var(--muted); border:1px solid var(--border); padding:6px 10px; border-radius:999px; }
+    .grid{ display:grid; grid-template-columns: 380px 1fr; gap:16px; }
+    .card{ background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)); border:1px solid var(--border); border-radius:14px; padding:16px; box-shadow:0 12px 30px rgba(2,6,23,0.35); }
+    h2{ margin:0 0 6px 0; font-size:18px; }
+    p.lead{ margin:0 0 12px 0; font-size:13px; color:var(--muted); }
+    label{ display:block; margin-top:10px; font-size:12px; color:var(--muted); }
+    input, select{
+      width:100%; margin-top:6px; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      background:#0b1324; color:var(--text); outline:none;
+    }
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center; gap:8px;
+      border:none; border-radius:10px; padding:10px 12px; font-weight:700; cursor:pointer;
+      background:linear-gradient(90deg, var(--accent), var(--accent2)); color:#041626;
+      box-shadow:0 10px 28px rgba(79,70,229,0.25);
+    }
+    .btn.ghost{ background:transparent; color:var(--muted); border:1px solid var(--border); box-shadow:none; }
+    .btn.mini{ padding:8px 10px; font-weight:700; font-size:12px; }
+    .actions{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .status{ display:flex; align-items:center; gap:10px; margin-top:12px; }
+    .dot{ width:10px; height:10px; border-radius:50%; background:#334155; }
+    .dot.running{ background:var(--good); box-shadow:0 8px 18px rgba(16,185,129,0.25); }
+    .stats{ display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin-top:12px; }
+    .stat{ padding:12px; border-radius:10px; background:#0b1324; border:1px solid var(--border); text-align:center; }
+    .stat .k{ font-size:12px; color:var(--muted); }
+    .stat .v{ margin-top:6px; font-size:16px; font-weight:800; }
+    .stat.good .v{ color:#7ff4b4; }
+    .stat.bad .v{ color:#ff9c9c; }
+
+    /* Таблица сделок */
+    .table-wrap{ margin-top:12px; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+    table{ width:100%; border-collapse:collapse; font-size:12px; }
+    thead{ background:#0b1324; }
+    th, td{ padding:10px; border-bottom:1px solid var(--border); text-align:left; }
+    th{ color:#9fb2cc; font-weight:700; }
+    tbody tr:hover{ background:#0b13241a; }
+    .tag{ display:inline-block; padding:2px 8px; border-radius:999px; font-weight:700; font-size:11px; }
+    .tag.open{ background:#052b21; color:#10b981; border:1px solid #0f5132; }
+    .tag.closed{ background:#2b0a0a; color:#ef4444; border:1px solid #7f1d1d; }
+    .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color:#cfe1ff; }
+
+    .logs{ margin-top:12px; height:220px; overflow:auto; background:#0b1324; border:1px solid var(--border); border-radius:10px; padding:10px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; color:#cfe1ff; }
+    .footer{ margin-top:10px; font-size:12px; color:var(--muted); text-align:center; }
+
+    /* Аналитика */
+    .analytics-grid{ display:grid; grid-template-columns: repeat(6,1fr); gap:8px; margin-top:12px; }
+    @media(max-width:1150px){ .grid{ grid-template-columns: 1fr; } }
+    @media(max-width:760px){ .analytics-grid{ grid-template-columns: repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">Smart Spot Bot</div>
+      <div class="badge" id="envBadge">Local</div>
+    </div>
+
+    <div class="grid">
+      <!-- Управление -->
+      <div class="card">
+        <h2>Управление</h2>
+        <p class="lead">Подключите ключи, настройте пороги, TP и шаг сетки. Запустите авто-режим.</p>
+
+        <label>API Key</label>
+        <input id="api_key" type="text" placeholder="Введите API Key" autocomplete="off" />
+
+        <label>API Secret</label>
+        <input id="api_secret" type="text" placeholder="Введите API Secret" autocomplete="off" />
+
+        <label>Пара</label>
+        <input id="symbol" type="text" value="BTCUSDT" placeholder="BTCUSDT" />
+
+        <div class="row">
+          <div>
+            <label>Порог для покупки (score)</label>
+            <input id="buy_threshold" type="number" value="0.6" step="0.01" />
+          </div>
+          <div>
+            <label>Минимум прибыли, % (активация trailing)</label>
+            <input id="tp_pct" type="number" value="1" step="0.1" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Количество на сделку (qty)</label>
+            <input id="default_qty" type="number" value="0.001" step="0.0001" />
+          </div>
+          <div>
+            <label>Шаг сетки, % (± от реф. цены)</label>
+            <input id="grid_step_pct" type="number" value="1" step="0.1" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Таймфрейм</label>
+            <select id="timeframe">
+              <option value="1h" selected>1h</option>
+              <option value="15m">15m</option>
+              <option value="5m">5m</option>
+            </select>
+          </div>
+          <div>
+            <label>Глубина истории (OHLCV)</label>
+            <input id="limit_ohlcv" type="number" value="100" step="1" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Trailing stop, %</label>
+            <input id="trail_pct" type="number" value="1" step="0.1" />
+          </div>
+          <div>
+            <label>ATR множитель</label>
+            <input id="atr_mult" type="number" value="2" step="0.1" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Начальный депозит (quote валюта)</label>
+            <input id="initial_deposit" type="number" value="0" step="0.01" />
+          </div>
+          <div>
+            <label style="opacity:0.8">Авто‑депозит</label>
+            <input id="initial_deposit_info" type="text" value="Будет зафиксирован при подключении" readonly />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="btnConnect">Подключить</button>
+          <button class="btn" id="btnSaveConfig">Сохранить конфиг</button>
+          <button class="btn ghost" id="btnStart">Запустить проверку сейчас</button>
+          <button class="btn ghost" id="btnStop">Остановить и закрыть</button>
+          <button class="btn mini" id="btnExport">Экспорт CSV</button>
+        </div>
+
+        <div class="status">
+          <div id="statusDot" class="dot"></div>
+          <div>
+            <div id="statusText" style="font-weight:800">Остановлен</div>
+            <div id="statusSub" style="font-size:12px; color:var(--muted)">Не подключено</div>
+          </div>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="k">Цена</div><div class="v mono" id="price">—</div></div>
+          <div class="stat"><div class="k">MA20</div><div class="v mono" id="ma20">—</div></div>
+          <div class="stat"><div class="k">MA50</div><div class="v mono" id="ma50">—</div></div>
+        </div>
+
+        <h2 style="margin-top:18px;">Аналитика</h2>
+        <p class="lead">Статистика по закрытым сделкам. Обновляется автоматически.</p>
+        <div class="analytics-grid">
+          <div class="stat" id="an_total"><div class="k">Закрытых сделок</div><div class="v mono" id="total_trades">—</div></div>
+          <div class="stat" id="an_winrate"><div class="k">Winrate, %</div><div class="v mono" id="winrate">—</div></div>
+          <div class="stat" id="an_avg"><div class="k">Средний PnL</div><div class="v mono" id="avg_pnl">—</div></div>
+          <div class="stat bad" id="an_dd"><div class="k">Макс. просадка</div><div class="v mono" id="max_drawdown">—</div></div>
+          <div class="stat good" id="an_totalpnl"><div class="k">Общий PnL</div><div class="v mono" id="total_pnl">—</div></div>
+          <div class="stat" id="an_roi"><div class="k">ROI, %</div><div class="v mono" id="roi_pct">—</div></div>
+        </div>
+      </div>
+
+      <!-- Аналитика и сделки -->
+      <div class="card">
+        <h2>Аналитика и сделки</h2>
+        <p class="lead">Score, метрики и полный список сделок. Референтная цена для сетки отображается ниже.</p>
+
+        <div class="stats" style="grid-template-columns: repeat(4,1fr);">
+          <div class="stat"><div class="k">Score</div><div class="v mono" id="score">—</div></div>
+          <div class="stat"><div class="k">Поддержка</div><div class="v mono" id="support">—</div></div>
+          <div class="stat"><div class="k">Сопротивление</div><div class="v mono" id="resistance">—</div></div>
+          <div class="stat"><div class="k">Реф. цена (сетка)</div><div class="v mono" id="last_ref_price">—</div></div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Направление</th>
+                <th>Цена входа</th>
+                <th>TP</th>
+                <th>Qty</th>
+                <th>Статус</th>
+                <th>Открыта</th>
+                <th>Закрыта</th>
+                <th>PnL</th>
+              </tr>
+            </thead>
+            <tbody id="tradesBody">
+              <tr><td colspan="9" style="color:#9aa4b2;">Сделок пока нет</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="logs" id="logs"></div>
+        <div class="footer">Не вводите ключи с правами вывода. Символ можно указывать как BTCUSDT (без слэша).</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'http://localhost:8000';
+    const WS_URL   = 'ws://localhost:8000/ws';
+    document.getElementById('envBadge').innerText = (location.hostname === 'localhost' ? 'Local' : 'Remote');
+    const $ = id => document.getElementById(id);
+    const addLog = (txt) => {
+      const el = document.createElement('div');
+      el.className = 'logline';
+      el.innerHTML = `<span style="color:#8aa0b6">${new Date().toLocaleTimeString()}</span> • ${txt}`;
+      $('logs').appendChild(el); $('logs').scrollTop = $('logs').scrollHeight;
+    };
+    const formatNum = (n, d=2) => (n===null||n===undefined||Number.isNaN(Number(n))) ? '—' : Number(n).toFixed(d);
+    const tsToStr = (ts) => !ts ? '—' : new Date(ts*1000).toLocaleString();
+
+    const setStatus = (running, sub) => {
+      const dot = $('statusDot'); const text = $('statusText'); const subEl = $('statusSub');
+      if(running){ dot.classList.add('running'); text.innerText = 'Запущен'; } else { dot.classList.remove('running'); text.innerText = 'Остановлен'; }
+      if(sub) subEl.innerText = sub;
+    };
+
+    // Рендер метрик аналитики
+    function renderAnalytics(a){
+      if(!a){ return; }
+      $('total_trades').innerText = a.total_trades ?? '—';
+      $('winrate').innerText = a.winrate !== undefined ? formatNum(a.winrate, 2) : '—';
+      $('avg_pnl').innerText = a.avg_pnl !== undefined ? formatNum(a.avg_pnl, 6) : '—';
+      $('max_drawdown').innerText = a.max_drawdown !== undefined ? formatNum(a.max_drawdown, 6) : '—';
+      $('total_pnl').innerText = a.total_pnl !== undefined ? formatNum(a.total_pnl, 6) : '—';
+      $('roi_pct').innerText = a.roi_pct !== undefined ? formatNum(a.roi_pct, 2) : '—';
+
+      // цветовые акценты
+      const totalPnlCard = $('an_totalpnl');
+      const ddCard = $('an_dd');
+      if(a.total_pnl > 0){ totalPnlCard.classList.add('good'); totalPnlCard.classList.remove('bad'); }
+      else { totalPnlCard.classList.remove('good'); totalPnlCard.classList.add('bad'); }
+      if(a.max_drawdown < 0){ ddCard.classList.add('bad'); } else { ddCard.classList.remove('bad'); }
+    }
+
+    // Рендер таблицы сделок
+    function renderTrades(trades){
+      const body = $('tradesBody');
+      body.innerHTML = '';
+      if(!trades || trades.length === 0){
+        body.innerHTML = '<tr><td colspan="9" style="color:#9aa4b2;">Сделок пока нет</td></tr>';
+        return;
+      }
+      for(const t of trades){
+        const tr = document.createElement('tr');
+        const tagClass = t.status === 'open' ? 'tag open' : 'tag closed';
+        tr.innerHTML = `
+          <td class="mono">${t.id}</td>
+          <td>${t.side === 'long' ? 'Покупка' : 'Продажа'}</td>
+          <td class="mono">${formatNum(t.entry_price, 6)}</td>
+          <td class="mono">${formatNum(t.tp_price, 6)}</td>
+          <td class="mono">${formatNum(t.qty, 6)}</td>
+          <td><span class="${tagClass}">${t.status}</span></td>
+          <td class="mono">${tsToStr(t.created_at)}</td>
+          <td class="mono">${tsToStr(t.closed_at)}</td>
+          <td class="mono">${t.pnl !== null && t.pnl !== undefined ? formatNum(t.pnl, 6) : '—'}</td>
+        `;
+        body.appendChild(tr);
+      }
+    }
+
+    async function apiPost(path, body){
+      const res = await fetch(BASE_URL + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body||{}) });
+      if(!res.ok){ const t = await res.text(); addLog(`Ошибка ${path}: ${res.status} ${t}`); throw new Error(t); }
+      return res.json();
+    }
+    async function apiGet(path){
+      const res = await fetch(BASE_URL + path);
+      if(!res.ok){ const t = await res.text(); addLog(`Ошибка ${path}: ${res.status} ${t}`); throw new Error(t); }
+      return res.json();
+    }
+
+    // Подключение
+    $('btnConnect').addEventListener('click', async ()=>{
+      try{
+        let sym = $('symbol').value.trim().replace(/\//g,'').toUpperCase();
+        if(!$('api_key').value.trim() || !$('api_secret').value.trim()){
+          addLog('Введите API Key и API Secret'); return;
+        }
+        addLog('Отправка ключей на сервер...');
+        const r = await apiPost('/api/connect', { api_key: $('api_key').value.trim(), api_secret: $('api_secret').value.trim(), symbol: sym });
+        addLog('Ключи приняты • ' + (r.symbol || sym));
+        setStatus(false, r.symbol || sym);
+        if(r.initial_deposit !== undefined){
+          $('initial_deposit').value = Number(r.initial_deposit).toFixed(2);
+          $('initial_deposit_info').value = `Зафиксировано: ${Number(r.initial_deposit).toFixed(2)}`;
+          addLog(`Начальный депозит зафиксирован: ${Number(r.initial_deposit).toFixed(2)}`);
+        }
+      } catch(e){ addLog('Ошибка подключения: ' + e.message); }
+    });
+
+    // Сохранить конфиг
+    $('btnSaveConfig').addEventListener('click', async ()=>{
+      try{
+        const payload = {
+          buy_threshold: Number($('buy_threshold').value),
+          tp_pct: Number($('tp_pct').value)/100,
+          default_qty: Number($('default_qty').value),
+          timeframe: $('timeframe').value,
+          limit_ohlcv: Number($('limit_ohlcv').value),
+          grid_step_pct: Number($('grid_step_pct').value)/100,
+          trail_pct: Number($('trail_pct').value)/100,
+          atr_mult: Number($('atr_mult').value),
+          initial_deposit: Number($('initial_deposit').value),
+        };
+        addLog(`Сохранение конфига: deposit=${payload.initial_deposit.toFixed(2)}, score≥${payload.buy_threshold}, TP=${(payload.tp_pct*100).toFixed(2)}%`);
+        const r = await apiPost('/api/config', payload);
+        addLog('Конфиг сохранён');
+      } catch(e){ addLog('Ошибка сохранения: ' + e.message); }
+    });
+
+    // Разовый запуск анализа
+    $('btnStart').addEventListener('click', async ()=>{
+      try{
+        addLog('Запуск анализа...');
+        const r = await apiPost('/api/start', {});
+        addLog(`Результат: placed=${r.placed||0}, score=${r.score}, price=${r.price}`);
+        if(r.metrics){
+          $('score').innerText = formatNum(r.score, 2);
+          $('support').innerText = formatNum(r.metrics.support, 2);
+          $('resistance').innerText = formatNum(r.metrics.resistance, 2);
+        }
+        $('price').innerText = formatNum(r.price, 2);
+        $('ma20').innerText  = formatNum(r.ma20, 2);
+        $('ma50').innerText  = formatNum(r.ma50, 2);
+        $('last_ref_price').innerText = formatNum(r.last_ref_price, 2);
+        renderTrades(r.trades);
+        renderAnalytics(r.analytics);
+        setStatus(r.running);
+      } catch(e){ addLog('Ошибка запуска: ' + e.message); }
+    });
+
+    // Остановка
+    $('btnStop').addEventListener('click', async ()=>{
+      try{
+        addLog('Остановка и закрытие открытых сделок...');
+        const r = await apiPost('/api/stop', {});
+        addLog(`Бот остановлен • закрыто: ${r.closed||0}`);
+        setStatus(false);
+        const s = await apiGet('/api/status');
+        renderTrades(s.trades);
+        renderAnalytics(s.analytics);
+      } catch(e){ addLog('Ошибка остановки: ' + e.message); }
+    });
+
+    // Экспорт CSV
+    $('btnExport').addEventListener('click', async ()=>{
+      try{
+        addLog('Экспорт истории сделок в CSV...');
+        const url = BASE_URL + '/api/export';
+        window.open(url, '_blank');
+      } catch(e){ addLog('Ошибка экспорта: ' + e.message); }
+    });
+
+    // Периодический опрос статуса
+    async function refreshStatus(){
+      try{
+        const s = await apiGet('/api/status');
+        $('price').innerText = formatNum(s.price, 2);
+        $('ma20').innerText  = formatNum(s.ma20, 2);
+        $('ma50').innerText  = formatNum(s.ma50, 2);
+        $('score').innerText = formatNum(s.score, 2);
+        $('last_ref_price').innerText = formatNum(s.last_ref_price, 2);
+        if(s.metrics){
+          $('support').innerText = formatNum(s.metrics.support, 2);
+          $('resistance').innerText = formatNum(s.metrics.resistance, 2);
+        }
+        if(s.config && s.config.initial_deposit !== undefined){
+          $('initial_deposit').value = Number(s.config.initial_deposit).toFixed(2);
+          $('initial_deposit_info').value = `Зафиксировано: ${Number(s.config.initial_deposit).toFixed(2)}`;
+        }
+        renderTrades(s.trades);
+        renderAnalytics(s.analytics);
+        setStatus(s.state === 'running', $('statusSub').innerText);
+      }catch(e){ /* тихо */ }
+    }
+    setInterval(refreshStatus, 6000);
+    refreshStatus();
+
+    // WebSocket — обновление быстрых данных
+    try{
+      const ws = new WebSocket(WS_URL);
+      ws.onopen = ()=> addLog('WS подключен');
+      ws.onmessage = ev => {
+        try{
+          const msg = JSON.parse(ev.data);
+          if(msg.type === 'status'){
+            if(msg.price) $('price').innerText = formatNum(msg.price, 2);
+            if(msg.ma20)  $('ma20').innerText  = formatNum(msg.ma20, 2);
+            if(msg.ma50)  $('ma50').innerText  = formatNum(msg.ma50, 2);
+            if(msg.score!==undefined) $('score').innerText = formatNum(msg.score, 2);
+            if(msg.last_ref_price!==undefined) $('last_ref_price').innerText = formatNum(msg.last_ref_price, 2);
+            if(msg.trades) renderTrades(msg.trades);
+            if(msg.analytics) renderAnalytics(msg.analytics);
+            if(msg.config && msg.config.initial_deposit !== undefined){
+              $('initial_deposit').value = Number(msg.config.initial_deposit).toFixed(2);
+              $('initial_deposit_info').value = `Зафиксировано: ${Number(msg.config.initial_deposit).toFixed(2)}`;
+            }
+            setStatus(msg.state === 'running');
+          }
+        }catch(err){ /* ignore */ }
+      };
+      ws.onclose = ()=> addLog('WS отключен');
+    }catch(e){ /* optional */ }
+
+    addLog('Интерфейс готов. Локальный режим активен.');
+  </script>
+</body>
+</html>
