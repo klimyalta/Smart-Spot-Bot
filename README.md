@@ -1,2 +1,26 @@
-# Smart-Spot-Bot
-Smart Spot Bot — автоматический спот-бот для Bybit с веб-интерфейсом. Входы по рынку с фильтром MA20/RSI и сеткой (±1%), выходы по trailing stop (+1%) + ATR-стоп (x2) с удержанием по MA50. Индикаторы (MA, RSI, тренд, CVD, Pivot), аналитика (winrate, ROI, просадка, PnL), CSV-экспорт, Telegram, WebSocket. FastAPI + HTML/JS. Dry-run для тестов.
+# Smart Spot Bot — Торговый бот с веб-интерфейсом
+
+Автоматический спот-бот для Bybit: входы по рынку с фильтром MA20 и сеткой, выходы по trailing/ATR-стопам.  
+Расчёт индикаторов, аналитика сделок и уведомления.
+
+**Основные возможности:**
+- Индикаторы: MA20/MA50, RSI, тренд, CVD, уровни Pivot  
+- Входы: по рынку с фильтром (MA20, RSI), сетка доливок (±1%)  
+- Выходы: trailing stop (+1% от входа), ATR-стоп (x2), удержание по MA50  
+- Аналитика: winrate, avg pnl, max drawdown, total pnl, ROI  
+- Персистентность: сделки/конфиг в JSON  
+- Экспорт истории в CSV  
+- Уведомления: Telegram при ошибках  
+- Dry-run: симуляция без реальных ордеров  
+
+**Технологии:**
+- Backend: Python, FastAPI, ccxt (Bybit), numpy  
+- Frontend: HTML5, CSS, JavaScript, WebSocket  
+- Логи: logging + Telegram-handler  
+
+## Как запустить локально
+
+1. Склонируй репозиторий  
+   ```bash
+   git clone https://github.com/klimyalta/smart-spot-bot.git
+   cd smart-spot-bot
